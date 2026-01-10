@@ -9,7 +9,7 @@ function hideEngagementCounts() {
         }
     });
 
-    // Hide reaction counts
+    // Hide reaction counts under posts
     const reactionCounts = document.querySelectorAll('[class*="social-details-social-counts__reactions-count"]');
     reactionCounts.forEach(el => el.style.display = 'none');
 
@@ -21,13 +21,43 @@ function hideEngagementCounts() {
     const repostCounts = document.querySelectorAll('[class*="social-details-social-counts__num-reposts"]');
     repostCounts.forEach(el => el.style.display = 'none');
 
-    // Hide entire social counts section
+    // Hide entire social counts section (likes, comments, reposts summary)
     const socialCounts = document.querySelectorAll('[class*="social-details-social-counts"]');
     socialCounts.forEach(el => el.style.display = 'none');
 
-    // Hide analytics buttons
+    // Hide analytics button on your posts
     const analyticsButtons = document.querySelectorAll('[aria-label*="analytics"]');
     analyticsButtons.forEach(el => el.style.display = 'none');
+
+    // Hide the reactors facepile (profile pictures with reactions on post detail page)
+    const facepiles = document.querySelectorAll('ul.social-details-reactors-facepile__list');
+    facepiles.forEach(el => el.style.setProperty('display', 'none', 'important'));
+
+    // Hide the "Reactions" heading above the facepile
+    const reactionsHeadings = document.querySelectorAll('h3.social-details-reactors-facepile__reactions-text');
+    reactionsHeadings.forEach(el => el.style.setProperty('display', 'none', 'important'));
+
+    // Hide the entire analytics entry point section (impressions count on post detail)
+    const analyticsEntryPoints = document.querySelectorAll('div.content-analytics-entry-point, a.analytics-entry-point');
+    analyticsEntryPoints.forEach(el => el.style.setProperty('display', 'none', 'important'));
+
+    // Hide sidebar stats (Profile viewers and Post impressions in left sidebar)
+    const sidebarStats = document.querySelectorAll('li.feed-left-nav-growth-widgets__entity-list-item');
+    sidebarStats.forEach(el => {
+        const text = el.textContent.toLowerCase();
+        if (text.includes('post impression') || text.includes('profile viewer')) {
+            el.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    // Hide any element with "impressions" in the visible text (catch-all)
+    const allElements = document.querySelectorAll('span.ca-entry-point__num-views, [class*="impression"]');
+    allElements.forEach(el => {
+        const text = el.textContent.toLowerCase();
+        if (text.includes('impression') && text.match(/\d/)) {
+            el.style.setProperty('display', 'none', 'important');
+        }
+    });
 }
 
 function filterNotifications() {
