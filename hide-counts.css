@@ -1,0 +1,25 @@
+/* Hide engagement metrics on LinkedIn */
+
+[class*="social-details-social-activity__social-proof-text"] {
+    display: none !important;
+}
+
+[class*="social-details-social-counts__reactions-count"] {
+    display: none !important;
+}
+
+[class*="social-details-social-counts__comments"] {
+    display: none !important;
+}
+
+[class*="social-details-social-counts__num-reposts"] {
+    display: none !important;
+}
+
+[class*="social-details-social-counts"] {
+    display: none !important;
+}
+
+[aria-label*="analytics"] {
+    display: none !important;
+}

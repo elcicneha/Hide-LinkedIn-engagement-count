@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "LinkedIn Engagement Hider",
+    "version": "1.0",
+    "description": "Hide view counts, reactions, and engagement metrics on LinkedIn",
+    "permissions": [
+        "activeTab"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.linkedin.com/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "css": [
+                "hide-counts.css"
+            ],
+            "run_at": "document_end"
+        }
+    ]
+}
