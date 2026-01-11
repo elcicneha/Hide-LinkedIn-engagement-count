@@ -23,3 +23,22 @@
 [aria-label*="analytics"] {
     display: none !important;
 }
+
+/* Hide notification items by default until JS processes them */
+div[data-finite-scroll-hotkey-item]:not([data-notification-checked]) a.nt-card__headline {
+    visibility: hidden;
+}
+
+div[data-finite-scroll-hotkey-item][data-notification-checked] a.nt-card__headline {
+    visibility: visible;
+}
+
+/* Alternatively, hide entire notification until checked */
+div[data-finite-scroll-hotkey-item]:not([data-notification-checked]) {
+    opacity: 0;
+    transition: opacity 0.1s ease-in;
+}
+
+div[data-finite-scroll-hotkey-item][data-notification-checked] {
+    opacity: 1;
+}

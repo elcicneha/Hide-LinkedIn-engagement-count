@@ -1,157 +1,170 @@
 // Content script to hide engagement metrics and filter notifications on LinkedIn
 
-function hideEngagementCounts() {
-    // Get border style from social counts once and apply to all action bars
-    const sampleSocialCount = document.querySelector('[class*="social-details-social-counts"]');
-    if (sampleSocialCount) {
-        const computedStyle = window.getComputedStyle(sampleSocialCount);
-        const borderStyle = computedStyle.getPropertyValue('border-bottom-width') + ' ' +
-            computedStyle.getPropertyValue('border-bottom-style') + ' ' +
-            computedStyle.getPropertyValue('border-bottom-color');
+// Cache for processed elements to avoid re-processing
+const processedElements = new WeakSet();
 
-        // Apply to all action bars
-        const actionBars = document.querySelectorAll('div.feed-shared-social-action-bar, div.social-action-bar');
+// Debounce helper to reduce function calls
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function hideEngagementCounts() {
+    // Get border style once and cache it
+    if (!hideEngagementCounts.borderStyle) {
+        const sampleSocialCount = document.querySelector('.social-details-social-counts');
+        if (sampleSocialCount) {
+            const computedStyle = window.getComputedStyle(sampleSocialCount);
+            hideEngagementCounts.borderStyle =
+                computedStyle.borderBottomWidth + ' ' +
+                computedStyle.borderBottomStyle + ' ' +
+                computedStyle.borderBottomColor;
+        }
+    }
+
+    // Apply border to action bars (only new ones)
+    if (hideEngagementCounts.borderStyle) {
+        const actionBars = document.querySelectorAll('.feed-shared-social-action-bar, .social-action-bar');
         actionBars.forEach(bar => {
-            bar.style.setProperty('border-top', borderStyle, 'important');
-            bar.style.setProperty('margin-top', '12px', 'important'); // Add space above the border
+            if (processedElements.has(bar)) return;
+            processedElements.add(bar);
+
+            bar.style.setProperty('border-top', hideEngagementCounts.borderStyle, 'important');
+
+            // Check for media - use single query with :has() or check once
+            const postContainer = bar.closest('.feed-shared-update-v2');
+            if (!postContainer) return;
+
+            const hasMedia = !!(
+                postContainer.querySelector('.feed-shared-image, .feed-shared-article, .feed-shared-external-video, .feed-shared-video, .feed-shared-linkedin-video')
+            );
+
+            if (!hasMedia) {
+                bar.style.setProperty('margin-top', '12px', 'important');
+            }
         });
     }
 
+    // Batch hide operations using CSS classes would be better, but since we can't modify CSS dynamically,
+    // we'll use more specific selectors and process only new elements
 
-    // Hide impression/view counts
-    const impressionElements = document.querySelectorAll('[class*="social-details-social-activity__social-proof-text"]');
-    impressionElements.forEach(el => {
-        if (el.textContent.includes('impression') || el.textContent.includes('view')) {
+    // Hide social counts sections
+    document.querySelectorAll('.social-details-social-counts').forEach(el => {
+        if (!processedElements.has(el)) {
+            processedElements.add(el);
             el.style.display = 'none';
         }
     });
 
-    // Hide reaction counts under posts
-    const reactionCounts = document.querySelectorAll('[class*="social-details-social-counts__reactions-count"]');
-    reactionCounts.forEach(el => el.style.display = 'none');
+    // Hide specific count elements
+    document.querySelectorAll('.social-details-social-counts__reactions-count, .social-details-social-counts__comments, .social-details-social-counts__num-reposts').forEach(el => {
+        if (!processedElements.has(el)) {
+            processedElements.add(el);
+            el.style.display = 'none';
+        }
+    });
 
-    // Hide comment counts
-    const commentCounts = document.querySelectorAll('[class*="social-details-social-counts__comments"]');
-    commentCounts.forEach(el => el.style.display = 'none');
+    // Hide analytics buttons
+    document.querySelectorAll('[aria-label*="analytics"]').forEach(el => {
+        if (!processedElements.has(el)) {
+            processedElements.add(el);
+            el.style.display = 'none';
+        }
+    });
 
-    // Hide repost counts
-    const repostCounts = document.querySelectorAll('[class*="social-details-social-counts__num-reposts"]');
-    repostCounts.forEach(el => el.style.display = 'none');
-
-    // Hide entire social counts section (likes, comments, reposts summary)
-    const socialCounts = document.querySelectorAll('[class*="social-details-social-counts"]');
-    socialCounts.forEach(el => el.style.display = 'none');
-
-    // Hide analytics button on your posts
-    const analyticsButtons = document.querySelectorAll('[aria-label*="analytics"]');
-    analyticsButtons.forEach(el => el.style.display = 'none');
-
-    // Hide the reactors facepile (profile pictures with reactions on post detail page)
-    const facepiles = document.querySelectorAll('ul.social-details-reactors-facepile__list');
-    facepiles.forEach(el => el.style.setProperty('display', 'none', 'important'));
-
-    // Hide the "Reactions" heading above the facepile
-    const reactionsHeadings = document.querySelectorAll('h3.social-details-reactors-facepile__reactions-text');
-    reactionsHeadings.forEach(el => el.style.setProperty('display', 'none', 'important'));
-
-    // Hide the entire analytics entry point section (impressions count on post detail)
-    const analyticsEntryPoints = document.querySelectorAll('div.content-analytics-entry-point, a.analytics-entry-point');
-    analyticsEntryPoints.forEach(el => el.style.setProperty('display', 'none', 'important'));
-
-    // Hide sidebar stats (Profile viewers and Post impressions in left sidebar)
-    const sidebarStats = document.querySelectorAll('li.feed-left-nav-growth-widgets__entity-list-item');
-    sidebarStats.forEach(el => {
-        const text = el.textContent.toLowerCase();
-        if (text.includes('post impression') || text.includes('profile viewer')) {
+    // Hide facepile and reactions heading
+    document.querySelectorAll('.social-details-reactors-facepile__list, .social-details-reactors-facepile__reactions-text').forEach(el => {
+        if (!processedElements.has(el)) {
+            processedElements.add(el);
             el.style.setProperty('display', 'none', 'important');
         }
     });
 
-    // Hide any element with "impressions" in the visible text (catch-all)
-    const allElements = document.querySelectorAll('span.ca-entry-point__num-views, [class*="impression"]');
-    allElements.forEach(el => {
+    // Hide analytics entry points
+    document.querySelectorAll('.content-analytics-entry-point, .analytics-entry-point').forEach(el => {
+        if (!processedElements.has(el)) {
+            processedElements.add(el);
+            el.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    // Hide sidebar stats - only check text if not processed
+    document.querySelectorAll('.feed-left-nav-growth-widgets__entity-list-item').forEach(el => {
+        if (processedElements.has(el)) return;
         const text = el.textContent.toLowerCase();
-        if (text.includes('impression') && text.match(/\d/)) {
+        if (text.includes('post impression') || text.includes('profile viewer')) {
+            processedElements.add(el);
+            el.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    // Hide impression elements with text check
+    document.querySelectorAll('.ca-entry-point__num-views, .social-details-social-activity__social-proof-text').forEach(el => {
+        if (processedElements.has(el)) return;
+        const text = el.textContent.toLowerCase();
+        if ((text.includes('impression') || text.includes('view')) && /\d/.test(text)) {
+            processedElements.add(el);
             el.style.setProperty('display', 'none', 'important');
         }
     });
 }
 
 function filterNotifications() {
-    // Target the wrapper divs and articles
-    const notificationWrappers = document.querySelectorAll('div[data-finite-scroll-hotkey-item]');
+
+    const notificationWrappers = document.querySelectorAll('div[data-finite-scroll-hotkey-item]:not([data-notification-checked])');
 
     notificationWrappers.forEach(wrapper => {
-        // Skip if already processed
-        if (wrapper.dataset.notificationChecked) return;
         wrapper.dataset.notificationChecked = 'true';
 
-        // Find the headline link inside this notification
-        const headlineLink = wrapper.querySelector('a.nt-card__headline');
+        const headlineLink = wrapper.querySelector('.nt-card__headline');
+        if (!headlineLink) return;
 
-        if (headlineLink) {
-            const text = headlineLink.textContent.toLowerCase();
+        const text = headlineLink.textContent.toLowerCase();
 
-            // Check if this is a reaction or impression notification
-            const isReactionNotification = (
-                text.includes('reacted to your') ||
-                text.includes('liked your') ||
-                text.includes('celebrated your') ||
-                text.includes('loved your') ||
-                text.includes('supported your') ||
-                text.includes('others reacted')
-            );
+        // Use single regex test for better performance
+        const isReactionNotification = /reacted to your|liked your|celebrated your|loved your|supported your|others reacted/.test(text);
+        const isImpressionNotification = /impression|view your analytics/.test(text);
+        const isCommentNotification = /commented on your|commented on a post|also commented/.test(text);
 
-            const isImpressionNotification = (
-                text.includes('impression') ||
-                text.includes('view your analytics')
-            );
-
-            // Check if this is a comment notification (but NOT about impressions/reactions on comments)
-            const isCommentNotification = (
-                text.includes('commented on your') ||
-                text.includes('commented on a post') ||
-                text.includes('also commented')
-            );
-
-            // Hide reactions and impressions, but keep actual comment notifications
-            if ((isReactionNotification || isImpressionNotification) && !isCommentNotification) {
-                wrapper.style.setProperty('display', 'none', 'important');
-                wrapper.dataset.notificationFiltered = 'hidden';
-            }
+        if ((isReactionNotification || isImpressionNotification) && !isCommentNotification) {
+            wrapper.style.setProperty('display', 'none', 'important');
+            wrapper.dataset.notificationFiltered = 'hidden';
         }
 
-        // Also hide the reaction count sections inside notifications
-        const reactionCountSections = wrapper.querySelectorAll('section.nt-social-counts');
-        reactionCountSections.forEach(section => {
-            const text = section.textContent.toLowerCase();
-            if (text.includes('reaction')) {
+        // Hide reaction count sections
+        wrapper.querySelectorAll('.nt-social-counts').forEach(section => {
+            if (section.textContent.toLowerCase().includes('reaction')) {
                 section.style.setProperty('display', 'none', 'important');
             }
         });
     });
 }
 
-function runAllFilters() {
-    hideEngagementCounts();
-    filterNotifications();
-}
+// Debounced version to avoid too many calls
+const debouncedHideEngagementCounts = debounce(hideEngagementCounts, 150);
+const debouncedFilterNotifications = debounce(filterNotifications, 150);
 
 // Run immediately
-runAllFilters();
+hideEngagementCounts();
+filterNotifications();
 
-// Run whenever the page changes (more aggressive monitoring)
+// Single MutationObserver with debouncing - MUCH more efficient
 const observer = new MutationObserver(() => {
-    filterNotifications();
-    hideEngagementCounts();
+    debouncedHideEngagementCounts();
+    debouncedFilterNotifications();
 });
 
+// Only watch for new elements being added, not attribute changes
 observer.observe(document.body, {
     childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['style', 'class']
+    subtree: true
 });
 
-// Run more frequently to catch dynamic loads
-setInterval(runAllFilters, 500);
+// Remove the setInterval - the MutationObserver is enough!
