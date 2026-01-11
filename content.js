@@ -71,6 +71,14 @@ function hideEngagementCounts() {
         }
     });
 
+    // Hide reactions on comments
+    document.querySelectorAll('.comments-comment-social-bar__reactions-count--cr, .comments-comment-social-bar__social-counts-separator--cr').forEach(el => {
+        if (!processedElements.has(el)) {
+            processedElements.add(el);
+            el.style.display = 'none';
+        }
+    });
+
     // Hide analytics buttons
     document.querySelectorAll('[aria-label*="analytics"]').forEach(el => {
         if (!processedElements.has(el)) {

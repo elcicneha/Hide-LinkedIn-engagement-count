@@ -16,6 +16,14 @@
     display: none !important;
 }
 
+[class*="comments-comment-social-bar__reactions-count--cr"] {
+    display: none !important;
+}
+
+[class*="comments-comment-social-bar__social-counts-separator--cr"] {
+    display: none !important;
+}
+
 [class*="social-details-social-counts"] {
     display: none !important;
 }
