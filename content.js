@@ -1,6 +1,23 @@
 // Content script to hide engagement metrics and filter notifications on LinkedIn
 
 function hideEngagementCounts() {
+    // Get border style from social counts once and apply to all action bars
+    const sampleSocialCount = document.querySelector('[class*="social-details-social-counts"]');
+    if (sampleSocialCount) {
+        const computedStyle = window.getComputedStyle(sampleSocialCount);
+        const borderStyle = computedStyle.getPropertyValue('border-bottom-width') + ' ' +
+            computedStyle.getPropertyValue('border-bottom-style') + ' ' +
+            computedStyle.getPropertyValue('border-bottom-color');
+
+        // Apply to all action bars
+        const actionBars = document.querySelectorAll('div.feed-shared-social-action-bar, div.social-action-bar');
+        actionBars.forEach(bar => {
+            bar.style.setProperty('border-top', borderStyle, 'important');
+            bar.style.setProperty('margin-top', '12px', 'important'); // Add space above the border
+        });
+    }
+
+
     // Hide impression/view counts
     const impressionElements = document.querySelectorAll('[class*="social-details-social-activity__social-proof-text"]');
     impressionElements.forEach(el => {
